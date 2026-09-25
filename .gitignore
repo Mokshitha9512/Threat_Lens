@@ -1,0 +1,38 @@
+﻿# Virtual environment — never commit
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Database
+*.db
+*.sqlite3
+*.db-journal
+threatlens.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Env files
+.env
+.streamlit/secrets.toml
+
+# Test outputs
+.pytest_cache/
+.coverage
