@@ -35,19 +35,18 @@ def detect_protocol_anomalies(df: pd.DataFrame) -> list[Alert]:
     df["protocol"] = df["protocol"].str.upper()
 
     total = len(df)
+    pair_counts = df.groupby(["destination_port", "protocol"]).size().to_dict()
 
-    for _, row in df.iterrows():
+    candidates = df[df["destination_port"].isin(EXPECTED_PROTOCOL)]
+    for _, row in candidates.iterrows():
         port = row["destination_port"]
         proto = row["protocol"]
 
-        if port not in EXPECTED_PROTOCOL:
-            continue
         if proto in EXPECTED_PROTOCOL[port]:
             continue
 
         # Rare-event filter: this (port, proto) pair must be < 0.5% of ALL traffic
-        pair_count = len(df[(df["destination_port"] == port) &
-                            (df["protocol"] == proto)])
+        pair_count = pair_counts.get((port, proto), 0)
         if pair_count / total > 0.005:
             continue
 

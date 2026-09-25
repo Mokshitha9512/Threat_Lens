@@ -1,4 +1,4 @@
-﻿# Virtual environment — never commit
+# Virtual environment
 .venv/
 venv/
 env/
@@ -6,10 +6,10 @@ ENV/
 
 # Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 *.egg-info/
+.pytest_cache/
 
 # Database
 *.db
@@ -17,7 +17,10 @@ __pycache__/
 *.db-journal
 threatlens.db
 
-# IDE
+# Temporary test data
+data/test_tiny.csv
+
+# IDE & Editor
 .vscode/
 .idea/
 *.swp
@@ -26,13 +29,7 @@ threatlens.db
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs & Secrets
 *.log
-
-# Env files
 .env
 .streamlit/secrets.toml
-
-# Test outputs
-.pytest_cache/
-.coverage

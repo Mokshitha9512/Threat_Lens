@@ -4,6 +4,7 @@ Main entry point.
 """
 
 import streamlit as st
+from utils.state import get_data
 from utils.ui import (
     inject_css, topbar, section_header, card_row,
     walkthrough_card, expandable_service_card, get_current_theme
@@ -17,7 +18,8 @@ st.set_page_config(
 )
 
 inject_css()
-topbar(status_text="SYSTEM READY", status="good")
+df, alerts, incidents = get_data()
+topbar(status_text=f"SYSTEM READY · {len(df):,} FLOWS LOADED", status="good")
 
 theme = get_current_theme()
 badge_bg = "rgba(79, 70, 229, 0.08)" if theme == "light" else "rgba(0, 242, 254, 0.12)"

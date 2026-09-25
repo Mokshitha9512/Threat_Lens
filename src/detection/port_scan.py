@@ -34,9 +34,9 @@ def detect_port_scans(df: pd.DataFrame) -> list[Alert]:
                    (times[j] - times[i]).total_seconds() <= PORT_SCAN_WINDOW_SEC):
                 j += 1
 
-            window = group.iloc[i:j]
-            unique_ports = window["destination_port"].nunique()
-            event_count = len(window)
+            sub_ports = ports[i:j]
+            unique_ports = len(set(sub_ports))
+            event_count = j - i
 
             if (unique_ports >= PORT_SCAN_MIN_UNIQUE_PORTS and
                     event_count >= PORT_SCAN_MIN_EVENTS):
@@ -56,8 +56,7 @@ def detect_port_scans(df: pd.DataFrame) -> list[Alert]:
                         "unique_ports": int(unique_ports),
                         "events_in_window": int(event_count),
                         "window_seconds": float(window_seconds),
-                        "sample_ports": sorted(window["destination_port"]
-                                               .unique().tolist())[:10],
+                        "sample_ports": sorted(list(set(sub_ports)))[:10],
                     },
                 ))
                 # Skip past this window to avoid duplicate alerts
