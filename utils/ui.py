@@ -860,7 +860,7 @@ def metric_card(label: str, value: str, delta: str = "",
     )
 
 
-def walkthrough_card(phase: str, title: str, description: str) -> str:
+def walkthrough_card(phase: str, title: str, description: str, link_url: str = None) -> str:
     """Renders a card matching the exact visual style and proportions in the screenshot."""
     theme = get_current_theme()
     badge_bg = "rgba(79, 70, 229, 0.08)" if theme == "light" else "rgba(0, 242, 254, 0.12)"
@@ -869,12 +869,13 @@ def walkthrough_card(phase: str, title: str, description: str) -> str:
     title_color = "#0F172A" if theme == "light" else "#F8FAFC"
     sub_color = "#64748B" if theme == "light" else "#94A3B8"
 
-    return _clean(f"""
-    <div class="tl-card" style="min-height:106px;padding:14px 16px;">
-      <div style="margin-bottom:6px;">
+    card_inner = f"""
+    <div class="tl-card" style="min-height:106px;padding:14px 16px;cursor:{'pointer' if link_url else 'default'};">
+      <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
         <span style="display:inline-block;padding:2px 8px;border-radius:6px;background:{badge_bg};border:1px solid {badge_border};color:{badge_color};font-size:9.5px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;">
           {phase}
         </span>
+        {f'<span style="font-size:11px;color:{badge_color};font-weight:700;">Open →</span>' if link_url else ''}
       </div>
       <div style="font-family:'Outfit','Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:{title_color};letter-spacing:-0.2px;line-height:1.2;margin-bottom:5px;">
         {title}
@@ -883,7 +884,11 @@ def walkthrough_card(phase: str, title: str, description: str) -> str:
         {description}
       </div>
     </div>
-    """)
+    """
+
+    if link_url:
+        return _clean(f'<a href="{link_url}" target="_self" style="text-decoration:none !important;color:inherit !important;display:block;">{card_inner}</a>')
+    return _clean(card_inner)
 
 
 def expandable_service_card(badge: str, title: str, short_desc: str, full_desc: str,

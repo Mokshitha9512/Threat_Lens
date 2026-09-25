@@ -72,7 +72,8 @@ with c1:
         walkthrough_card(
             phase="PHASE 01",
             title="Ingest & Analyze",
-            description="Feed 25,000+ network event flows through multi-stage anomaly detection filters."
+            description="Feed 25,000+ network event flows through multi-stage anomaly detection filters.",
+            link_url="/Intrusion_Scanner"
         ),
         unsafe_allow_html=True
     )
@@ -82,7 +83,8 @@ with c2:
         walkthrough_card(
             phase="PHASE 02",
             title="Incident Correlation",
-            description="Group disparate port scans, credential stuffing, and flood alerts into unified attacker entities."
+            description="Group disparate port scans, credential stuffing, and flood alerts into unified attacker entities.",
+            link_url="/Active_Incidents"
         ),
         unsafe_allow_html=True
     )
@@ -92,7 +94,8 @@ with c3:
         walkthrough_card(
             phase="PHASE 03",
             title="Deep-Dive Forensics",
-            description="Inspect forensic timelines, protocol breakdowns, and evidence traces for rapid response."
+            description="Inspect forensic timelines, protocol breakdowns, and evidence traces for rapid response.",
+            link_url="/Entity_Forensics"
         ),
         unsafe_allow_html=True
     )

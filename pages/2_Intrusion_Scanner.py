@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-from utils.state import get_data, DATA_PATH
+from utils.state import get_data, set_custom_data, reset_to_default, DATA_PATH
 from utils.ui import (
     inject_css, topbar, section_header, card_row,
     get_current_theme, severity_badge
@@ -28,10 +28,23 @@ accent_color = "#4F46E5" if theme == "light" else "#00F2FE"
 badge_bg = "rgba(79, 70, 229, 0.1)" if theme == "light" else "rgba(0, 242, 254, 0.15)"
 badge_border = "rgba(79, 70, 229, 0.25)" if theme == "light" else "rgba(0, 242, 254, 0.35)"
 
+# Check if a custom telemetry dataset is active
+is_custom = "custom_df" in st.session_state
+source_label = st.session_state.get("source_name", "Custom CSV") if is_custom else "Enterprise Reference Baseline"
+
 if incidents:
     topbar(status_text=f"⚠ INTRUSION ENGINE ACTIVE · {len(incidents)} CORRELATED THREAT ENTITY", status="crit")
 else:
     topbar(status_text="DETECTION ENGINE ACTIVE · READY", status="good")
+
+if is_custom:
+    col_info, col_reset = st.columns([3, 1])
+    with col_info:
+        st.info(f"📁 **Active Dataset**: Custom Upload (`{source_label}` · {len(df):,} flows). All pages now reflect this data.")
+    with col_reset:
+        if st.button("🔄 Reset to Default Baseline", type="secondary", use_container_width=True):
+            reset_to_default()
+            st.rerun()
 
 section_header("🚀", "Intrusion Detection & Correlation Engine",
                "Multi-stage intrusion pipeline executing 5 deterministic rules and unsupervised Isolation Forest ML")
@@ -67,19 +80,19 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
-    c_btn, c_stat = st.columns([1, 2])
+    c_btn, _ = st.columns([1, 2])
     with c_btn:
         re_run = st.button("🔄 Re-Run Detection & Correlation Pipeline", type="primary", use_container_width=True)
 
     if re_run:
         with st.spinner("Processing network packets & evaluating ML Isolation Forest..."):
-            st.session_state.pop("analyzed", None)
+            reset_to_default()
             df, alerts, incidents = get_data()
         st.success(f"✅ Detection pipeline executed — {len(df):,} network flows evaluated.")
 
     # Live evaluation results (always visible)
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    section_header("📊", "Current Engine Results", "Real-time evaluation status across all detector modules")
+    section_header("📊", "Current Engine Results", f"Real-time evaluation status for: {source_label}")
 
     card_row([
         {"label": "Total Events Evaluated", "value": f"{len(df):,}", "delta": "Processed"},
@@ -118,11 +131,11 @@ with tab2:
     if uploaded is not None:
         try:
             df_up = pd.read_csv(uploaded)
-            st.success(f"Successfully parsed {len(df_up):,} flow records from uploaded CSV.")
-            st.dataframe(df_up.head(15), use_container_width=True)
+            st.success(f"Successfully parsed `{uploaded.name}` ({len(df_up):,} flow records).")
+            st.dataframe(df_up.head(10), use_container_width=True)
 
-            if st.button("🔍 Ingest & Analyze Uploaded Data", type="primary"):
-                with st.spinner("Processing custom telemetry and running detection models..."):
+            if st.button("🔍 Ingest & Analyze Uploaded Data", type="primary", use_container_width=True):
+                with st.spinner(f"Ingesting and evaluating {len(df_up):,} flows from {uploaded.name}..."):
                     df_proc = preprocess(df_up)
                     new_alerts = []
                     for fn in [
@@ -133,18 +146,53 @@ with tab2:
                         new_alerts.extend([a.to_dict() for a in fn(df_proc)])
 
                     new_incidents = correlate_alerts(new_alerts)
-                    st.session_state["df"] = df_proc
-                    st.session_state["alerts"] = new_alerts
-                    st.session_state["incidents"] = new_incidents
-                    st.session_state["analyzed"] = True
+                    set_custom_data(df_proc, new_alerts, new_incidents, source_name=uploaded.name)
 
-                st.success(f"✅ Ingestion complete! Found {len(new_alerts):,} alerts and {len(new_incidents)} correlated incidents. All sidebar views updated.")
-                st.rerun()
+                st.success(f"🎉 **Ingestion & Analysis Complete!** Processed {len(df_proc):,} flows, triggered {len(new_alerts):,} alerts, and correlated {len(new_incidents)} threat incidents.")
+
+                # Display the custom analyzed results immediately
+                card_row([
+                    {"label": "Custom Flows Processed", "value": f"{len(df_proc):,}", "delta": uploaded.name},
+                    {"label": "Alerts Triggered", "value": f"{len(new_alerts):,}", "variant": "warn"},
+                    {"label": "Correlated Incidents", "value": str(len(new_incidents)), "variant": "crit" if new_incidents else "good"},
+                ])
+
+                if new_incidents:
+                    st.markdown("#### 🚨 Detected Incident Dossiers from Uploaded Data")
+                    for inc in new_incidents:
+                        badge = severity_badge(inc["severity"])
+                        st.markdown(f"""
+                        <div class="tl-card crit" style="margin-bottom:12px;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div style="font-size:16px;font-weight:800;color:{title_color};">
+                              {inc['title']} · Attacker: <code>{inc['source_ip']}</code>
+                            </div>
+                            <div>{badge}</div>
+                          </div>
+                          <div style="color:{sub_color};font-size:13px;margin-top:6px;line-height:1.6;">
+                            <b>Risk Score:</b> <span style="color:#DC2626;font-weight:700;">{inc['risk_score']}/100</span> &nbsp;|&nbsp;
+                            <b>Attack Vectors:</b> {', '.join(inc['threat_types'])} &nbsp;|&nbsp;
+                            <b>Timeline:</b> {inc['first_seen']} → {inc['last_seen']}
+                          </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                st.markdown("#### 🚀 Explore Your Uploaded Telemetry Across the Platform")
+                link_c1, link_c2, link_c3 = st.columns(3)
+                with link_c1:
+                    st.page_link("pages/3_Active_Incidents.py", label="View in Active Incidents →", icon="🚨")
+                with link_c2:
+                    st.page_link("pages/1_SOC_Operations.py", label="View in SOC Operations →", icon="📊")
+                with link_c3:
+                    st.page_link("pages/4_Network_Telemetry.py", label="View in Network Telemetry →", icon="📈")
+
         except Exception as e:
-            st.error(f"Failed to process CSV: {e}")
+            st.error(f"Failed to process CSV: {type(e).__name__}: {e}")
+            import traceback
+            st.code(traceback.format_exc())
 
     st.markdown("<hr/>", unsafe_allow_html=True)
-    section_header("📁", "Enterprise Reference Dataset")
+    section_header("📁", "Enterprise Reference Baseline Dataset")
     if DATA_PATH.exists():
         df_sample = pd.read_csv(DATA_PATH)
         st.markdown(f"""

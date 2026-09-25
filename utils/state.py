@@ -33,6 +33,32 @@ def load_and_analyze_default():
     return df, alerts, incidents
 
 
+def set_custom_data(df: pd.DataFrame, alerts: list, incidents: list, source_name: str = "Custom Upload"):
+    """Stores custom analyzed telemetry into session state for all pages to use."""
+    st.session_state["custom_df"] = df
+    st.session_state["custom_alerts"] = alerts
+    st.session_state["custom_incidents"] = incidents
+    st.session_state["source_name"] = source_name
+    st.session_state["df"] = df
+    st.session_state["alerts"] = alerts
+    st.session_state["incidents"] = incidents
+    st.session_state["analyzed"] = True
+
+
+def reset_to_default():
+    """Clears custom data and restores the default enterprise telemetry."""
+    st.session_state.pop("custom_df", None)
+    st.session_state.pop("custom_alerts", None)
+    st.session_state.pop("custom_incidents", None)
+    st.session_state.pop("source_name", None)
+    df, alerts, incidents = load_and_analyze_default()
+    st.session_state["df"] = df
+    st.session_state["alerts"] = alerts
+    st.session_state["incidents"] = incidents
+    st.session_state["analyzed"] = True
+    return df, alerts, incidents
+
+
 def get_data():
     """Returns (df, alerts, incidents). Uses custom uploaded data if present, otherwise instant cached default."""
     if "custom_df" in st.session_state:
